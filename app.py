@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade, migrate, init
 import uuid
 from hashlib import sha256
 import markdown
+from os import path
 
 app = Flask(__name__)
 
@@ -11,7 +12,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+m = Migrate(app, db)
 
 # Define the Code model
 class Code(db.Model):
@@ -20,6 +21,12 @@ class Code(db.Model):
 
     def __repr__(self):
         return f'<Code {self.id}>'
+    
+with app.app_context():
+    if not path.exists('migrations'):
+        init(directory='migrations')
+    migrate(directory='migrations', message="Initial migration")
+    upgrade(directory='migrations')
 
 # Home page
 @app.route('/')
